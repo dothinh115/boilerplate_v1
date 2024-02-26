@@ -116,6 +116,7 @@ export class InitService {
           route.path === savedRoute.path && route.method === savedRoute.method
         );
       });
+      //xoá các route trong settings
       for (const excludedRoute of settings.EXCLUDED_ROUTE) {
         if (this.getParentRoute(savedRoute.path) === excludedRoute || !find)
           await this.permissionModel.findByIdAndDelete(savedRoute._id);
