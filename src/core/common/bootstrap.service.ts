@@ -89,7 +89,7 @@ export class BoostrapService {
     //xoá các route cha dư thừa
     const routes = await this.routeModel.find();
     for (const route of routes) {
-      if (route.path.includes('/api')) continue;
+      if (route.path.includes('api')) continue;
       const find = parentRoutes.find((x) => x === route.path);
       if (!find) await this.routeModel.findByIdAndDelete(route._id);
     }
@@ -97,7 +97,7 @@ export class BoostrapService {
     //Tạo permission
     for (const route of existingRoutes) {
       const existCheck = await this.permissionModel.findOne({
-        path: route.path,
+        path: route.path.slice(1),
         method: route.method,
       });
       if (existCheck) continue;
@@ -109,7 +109,10 @@ export class BoostrapService {
         }
       }
       if (!isContinue) continue;
-      await this.permissionModel.create(route);
+      await this.permissionModel.create({
+        path: route.path.slice(1),
+        method: route.method,
+      });
     }
 
     //add permissions vào route
@@ -134,12 +137,13 @@ export class BoostrapService {
     for (const savedRoute of savedRoutes) {
       const find = existingRoutes.find(
         (route) =>
-          route.path === savedRoute.path && route.method === savedRoute.method,
+          route.path.slice(1) === savedRoute.path &&
+          route.method === savedRoute.method,
       );
       for (const excludedRoute of settings.EXCLUDED_ROUTE) {
         if (
           (this.getParentRoute(savedRoute.path) === excludedRoute || !find) &&
-          !savedRoute.path.includes('/api')
+          !savedRoute.path.includes('api')
         )
           await this.permissionModel.findByIdAndDelete(savedRoute._id);
       }
@@ -151,8 +155,9 @@ export class BoostrapService {
     // tạo các dynamic route cha
     for (const model of this.models) {
       const find = routes.find((x) => x.path === model.name);
+
       if (find) continue;
-      const path = '/api/' + model.name;
+      const path = 'api/' + model.name;
       const exists = routes.find((x) => x.path === path);
       if (exists) continue;
       await this.routeModel.create({
@@ -162,29 +167,29 @@ export class BoostrapService {
 
     //xoá các dynamic route cha dư thừa
     for (const route of routes) {
-      if (route.path.includes('/api')) {
-        const find = this.models.find((x) => '/api/' + x.name === route.path);
+      if (route.path.includes('api')) {
+        const find = this.models.find((x) => 'api/' + x.name === route.path);
         if (!find) await this.routeModel.findByIdAndDelete(route._id);
       }
     }
 
     let permissions = await this.permissionModel.find();
-
     //tạo permistion cho dynamic route
     for (const model of this.models) {
       const find = permissions.find(
         (x) => this.getParentRoute(x.path) === model.name,
       );
+
       if (find) continue;
       const methods = ['post', 'get', 'patch', 'delete'];
       for (const method of methods) {
         const exists = await this.permissionModel.findOne({
-          path: '/api/' + model.name,
+          path: 'api/' + model.name,
           method,
         });
         if (exists) continue;
         await this.permissionModel.create({
-          path: '/api/' + model.name,
+          path: 'api/' + model.name,
           method,
         });
       }
@@ -192,12 +197,15 @@ export class BoostrapService {
 
     //xoá các dynamic permission dư thừa
     for (const permission of permissions) {
-      if (permission.path.includes('/api')) {
+      if (permission.path.includes('api')) {
         const name = permission.path
           .split('/')
           .filter((x) => x !== '')
           .slice(-1)[0];
         const exists = this.models.find((x) => x.name === name);
+        const existsInRoute = this.permissionModel.findOne({
+          path: name,
+        });
         if (!exists)
           await this.permissionModel.findByIdAndDelete(permission._id);
       }
@@ -206,7 +214,7 @@ export class BoostrapService {
     permissions = await this.permissionModel.find();
     //add dynamic permission vào dynamic route
     for (const permission of permissions) {
-      if (permission.path.includes('/api')) {
+      if (permission.path.includes('api')) {
         const route = await this.routeModel.findOne({
           path: permission.path,
         });
