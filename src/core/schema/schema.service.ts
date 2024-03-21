@@ -10,7 +10,15 @@ export class SchemaService {
     try {
       const find = this.models.find((x) => x.name === model)?.model;
       if (!find) throw new Error('Không có schema này!');
-      return find.schema.obj;
+      const result = find.schema.obj;
+      for (const key in result) {
+        result[key] = {
+          ...result[key],
+          type: result[key].type?.schemaName,
+        };
+      }
+
+      return { data: result };
     } catch (error) {
       throw new BadRequestException(error.message);
     }
