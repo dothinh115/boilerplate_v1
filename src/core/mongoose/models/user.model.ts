@@ -2,45 +2,20 @@ import { Prop } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 
 export default class DefaultUser {
-  @Prop({ auto: true, input: 'text', disabled: true })
+  @Prop({ auto: true })
   _id: mongoose.Schema.Types.ObjectId;
-  @Prop({
-    required: true,
-    lowercase: true,
-    unique: true,
-    trim: true,
-    type: mongoose.Schema.Types.String,
-    input: 'text',
-    disabled: true,
-  })
+  @Prop({ required: true, lowercase: true, unique: true, trim: true })
   email: string;
-  @Prop({
-    required: true,
-    select: false,
-    type: mongoose.Schema.Types.String,
-    input: 'password',
-  })
+  @Prop({ required: true, select: false })
   password: string;
-  @Prop({
-    default: false,
-    type: mongoose.Schema.Types.Boolean,
-    input: 'boolean',
-    disabled: true,
-  })
+  @Prop({ default: false })
   actived: boolean;
   @Prop({
     type: mongoose.Schema.Types.String,
     ref: 'Role',
     default: null,
-    input: 'text',
   })
   role: string;
-  @Prop({
-    default: false,
-    immutable: true,
-    type: mongoose.Schema.Types.Boolean,
-    input: 'boolean',
-    disabled: true,
-  })
+  @Prop({ default: false, immutable: true })
   rootUser: boolean;
 }
