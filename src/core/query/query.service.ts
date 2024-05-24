@@ -424,9 +424,9 @@ export class QueryService {
               .estimatedDocumentCount()
               .then((count) => (total_count = count)),
           );
-          filter_count = promises.push(
+          promises.push(
             model
-              .estimatedDocumentCount({ ...filterObj })
+              .countDocuments({ ...filterObj })
               .then((count) => (filter_count = count)),
           );
           break;
@@ -451,7 +451,7 @@ export class QueryService {
     }
 
     const data = {
-      data: result,
+      data: result ? result : [],
     };
     for (const meta of metaSelect) {
       if (meta === '*') {
