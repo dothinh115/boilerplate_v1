@@ -38,7 +38,11 @@ export class RolesGuard implements CanActivate {
         path: url,
         method: method.toLowerCase(),
       });
-      await this.cacheManager.set(cacheKey, currentRoutePermission, 60000);
+      await this.cacheManager.set(
+        cacheKey,
+        currentRoutePermission || '',
+        60000,
+      );
     }
 
     if (!currentRoutePermission || currentRoutePermission.public) {
@@ -61,17 +65,20 @@ export class RolesGuard implements CanActivate {
   }
 
   async extractUser(req: Request) {
-    let user;
     const token = req.headers?.authorization
       .split('Bearer ')
       .filter((x) => x !== '')[0];
+
     if (!token) throw new UnauthorizedException();
+    let user: any = await this.cacheManager.get(token);
+    if (user) return user;
     try {
       const decoded = await this.jwtService.verifyAsync(token);
       if (!decoded) throw new Error();
       const { _id } = decoded;
       const findUser = await this.userModel.findById(_id);
       user = findUser;
+      await this.cacheManager.set(token, user || '', 60000);
     } catch (error) {
       throw new ForbiddenException();
     }
