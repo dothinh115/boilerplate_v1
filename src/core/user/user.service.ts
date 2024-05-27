@@ -7,12 +7,14 @@ import { TQuery } from '../utils/models/query.model';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CustomRequest } from '../utils/models/request.model';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CommonService } from '../common/common.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private queryService: QueryService,
+    private commonService: CommonService,
   ) {}
 
   async create(query: TQuery, body: CreateUserDto) {
@@ -53,11 +55,10 @@ export class UserService {
       if (exist.rootUser && !user.rootUser) {
         throw new Error('Không được update rootUser!');
       }
-      //kiểm tra xem record có phải do user này tạo ra hay ko
-      if (exist.record_creater !== user._id) {
-        if (!user.rootUser)
-          throw new Error('Bạn không có quyền chỉnh sửa record này!');
-      }
+
+      const isValid = this.commonService.permissionCheck(exist, req);
+      if (!isValid)
+        throw new Error('Bạn không có quyền chỉnh sửa hoặc xoá record này!');
 
       const result = await this.userModel.findByIdAndUpdate(id, body);
       return await this.queryService.handleQuery(
@@ -80,11 +81,9 @@ export class UserService {
       if (exist.rootUser) {
         throw new Error('Không được xoá rootUser!');
       }
-      const user = req.user;
-      if (exist.record_creater !== user._id) {
-        if (!user.rootUser)
-          throw new Error('Bạn không có quyền chỉnh sửa record này!');
-      }
+      const isValid = this.commonService.permissionCheck(exist, req);
+      if (!isValid)
+        throw new Error('Bạn không có quyền chỉnh sửa hoặc xoá record này!');
       await this.userModel.findByIdAndDelete(id);
       return {
         message: 'Thành công!',

@@ -7,12 +7,14 @@ import { Role } from './schema/role.schema';
 import { Model } from 'mongoose';
 import { QueryService } from '../query/query.service';
 import { CustomRequest } from '../utils/models/request.model';
+import { CommonService } from '../common/common.service';
 
 @Injectable()
 export class RoleService {
   constructor(
     @InjectModel(Role.name) private roleModel: Model<Role>,
     private queryService: QueryService,
+    private commonService: CommonService,
   ) {}
   async create(body: CreateRoleDto, query: TQuery) {
     try {
@@ -46,11 +48,9 @@ export class RoleService {
         .findById(id)
         .select('+record_creater');
       if (!exist) throw new Error('Không có role này trong hệ thống!');
-      const user = req.user;
-      if (exist.record_creater !== user._id) {
-        if (!user.rootUser)
-          throw new Error('Bạn không có quyền chỉnh sửa record này!');
-      }
+      const isValid = this.commonService.permissionCheck(exist, req);
+      if (!isValid)
+        throw new Error('Bạn không có quyền chỉnh sửa hoặc xoá record này!');
       const result = await this.roleModel.findByIdAndUpdate(id, body);
       return await this.queryService.handleQuery(
         this.roleModel,
@@ -68,11 +68,9 @@ export class RoleService {
         .findById(id)
         .select('+record_creater');
       if (!exist) throw new Error('Không có role này trong hệ thống!');
-      const user = req.user;
-      if (exist.record_creater !== user._id) {
-        if (!user.rootUser)
-          throw new Error('Bạn không có quyền chỉnh sửa record này!');
-      }
+      const isValid = this.commonService.permissionCheck(exist, req);
+      if (!isValid)
+        throw new Error('Bạn không có quyền chỉnh sửa hoặc xoá record này!');
       await this.roleModel.findByIdAndDelete(id);
       return {
         message: 'Thành công!',

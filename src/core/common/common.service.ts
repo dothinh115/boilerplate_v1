@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import fs from 'fs';
+import { CustomRequest } from '../utils/models/request.model';
 
 @Injectable()
 export class CommonService {
@@ -32,5 +33,20 @@ export class CommonService {
           force: true,
         }),
       });
+  }
+
+  permissionCheck(
+    record: { record_creater: string },
+    req: CustomRequest,
+  ): boolean {
+    const user = req.user;
+    if (
+      record.record_creater !== user._id &&
+      !req.isModerator &&
+      !user.rootUser
+    ) {
+      return false;
+    }
+    return true;
   }
 }

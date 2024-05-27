@@ -81,6 +81,9 @@ export class RolesGuard implements CanActivate {
         record_creater: user._id,
       };
     }
+    if (currentRoutePermission.moderators.includes(user._id)) {
+      req.isModerator = true;
+    }
     // nếu là rootUser, pass ngay
     if (user.rootUser) return true;
 
