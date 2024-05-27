@@ -44,12 +44,19 @@ export class UserService {
   ) {
     try {
       //tìm xem user có nằm trong hệ thống hay ko
-      const exist = await this.userModel.findById(id);
+      const exist: any = await this.userModel
+        .findById(id)
+        .select('+record_creater');
       if (!exist) throw new Error('Không có user này trong hệ thống!');
       //kiểm tra xem có phải đang update rootUser hay ko và ngăn chặn lại
       const user = req.user;
       if (exist.rootUser && !user.rootUser) {
         throw new Error('Không được update rootUser!');
+      }
+      //kiểm tra xem record có phải do user này tạo ra hay ko
+      if (exist.record_creater !== user._id) {
+        if (!user.rootUser)
+          throw new Error('Bạn không có quyền chỉnh sửa record này!');
       }
 
       const result = await this.userModel.findByIdAndUpdate(id, body);
@@ -63,13 +70,20 @@ export class UserService {
     }
   }
 
-  async delete(id: string) {
+  async delete(id: string, req: CustomRequest) {
     try {
-      const exist = await this.userModel.findById(id);
+      const exist: any = await this.userModel
+        .findById(id)
+        .select('+record_creater');
       if (!exist) throw new Error('Không có user này trong hệ thống!');
       //kiểm tra xem có phải đang update rootUser hay ko và ngăn chặn lại
       if (exist.rootUser) {
         throw new Error('Không được xoá rootUser!');
+      }
+      const user = req.user;
+      if (exist.record_creater !== user._id) {
+        if (!user.rootUser)
+          throw new Error('Bạn không có quyền chỉnh sửa record này!');
       }
       await this.userModel.findByIdAndDelete(id);
       return {

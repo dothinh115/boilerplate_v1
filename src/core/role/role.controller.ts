@@ -8,12 +8,14 @@ import {
   Delete,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { RolesGuard } from '../guards/role.guard';
 import { TQuery } from '../utils/models/query.model';
+import { CustomRequest } from '../utils/models/request.model';
 
 @UseGuards(RolesGuard)
 @Controller('role')
@@ -35,12 +37,13 @@ export class RoleController {
     @Param('id') id: string,
     @Body() body: UpdateRoleDto,
     @Query() query: TQuery,
+    @Req() req: CustomRequest,
   ) {
-    return this.roleService.update(id, body, query);
+    return this.roleService.update(id, body, query, req);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.roleService.remove(id);
+  remove(@Param('id') id: string, @Req() req: CustomRequest) {
+    return this.roleService.remove(id, req);
   }
 }
